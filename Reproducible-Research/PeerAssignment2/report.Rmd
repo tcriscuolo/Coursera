@@ -1,0 +1,137 @@
+---
+title: "Coursera Reproducible Reasearch - Peer Assessment 2     
+         U.S. National Oceanic and Atmospheric Administration's (NOAA) Storm Database Analysis"
+date: "May 20, 2015"
+output: html_document
+---
+
+### Synopsis
+
+This report analyze one of U.S. National Oceanic and Atmospheric Administration's (NOAA) datasets, which has data from natural events from 1950 to November 2011 across United States. The analyze in this report attempt to answer two questions, the first one is what type of event is the most harmful to United States population and the second one is what events have the greatest economic consequences. 
+
+My conclusion shows that Tornado is the most harmful event to U. S. population with more than 5000 fatalities and around 90000 injuries. For economic consequence there are two main categories of economic damage, one is property and the second is crop, for property Flood caused around $144 billion loss and for crop Drought caused around $13 billion loss.
+
+### Data Processing:
+#### Loading the data
+
+Firstly, the data is downloaded from [Storm Data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2) to the user working directory then the data is
+loaded to R as a data.table.
+
+```{r, Downloading Data}
+
+download.file(url = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2",
+              destfile = "StormData.csv", method = "curl");
+```
+
+```{r, Reading Data,warning=FALSE}
+library(data.table);
+rawData <- data.table(read.csv("StormData.csv", header = TRUE,  
+                             stringsAsFactors = FALSE, row.names = NULL));
+```
+
+#### Manipulating the data
+
+The data set description can be fount at [Data Description](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf). 
+
+For our analysis we are interested in the following variables:  
+1. **EVTYPE** Type of natural event  
+2. **FATALITIES**  Number of fatalities    
+3. **INJURIES**  Number of injuries  
+4. **PROPDMG**  Amount of property damage  
+5. **PROPDMGEXP** Order of magnitude for property damage  
+6. **CROPDMG**  Amount of crop damage  
+7. **CROPDMGEXP** Order of magnitude for crop damage  
+The folowing R code selects the specified variables and removes the raw data from memmory. 
+```{r, selecting variables}
+  variables <- c("EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP");
+  data <- rawData[ , variables, with = FALSE];
+  rm(rawData);
+```
+
+Next all the crop and property damage are transformed billion dolars. 
+```{r, Dolar Unity}
+    # The exponent variable has the following values  
+    # ("K" "M" ""  "B" "m" "+" "0" "5" "6" "?" "4" "2" "3" "h" "7" "H" "-" "1" "8")  
+    # if it is not a know value of K, M or B exponent it is considerend to be a 10^-9 exponent.  
+  transform <- function(amount, exponent) {
+    switch(exponent, 
+           K = (amount*10^-6) , k = (amount*10^-6),
+           M = (amount*10^-3), m = (amount*10^-3),
+           B =  (amount), b = (amount),
+           (amount*10^-9))
+  }
+data[ , PROPDMG := transform(PROPDMG, PROPDMGEXP), by = 1:NROW(data)];
+data[ , CROPDMG := transform(CROPDMG, CROPDMGEXP), by = 1:NROW(data)]; 
+
+```
+
+For simplicity, in this report it is not considered that environmental events such as named "TSTM WINDS" and "THUNDERSTORM WINDS" in the EVTYPE variables are the same event. Further work is necessery to clean up this data by analysing these special cases in detail. 
+
+### Results
+
+#### Across the United States, which types of events are the most harmful to population health?
+
+
+The following R code displays the 10 natural events that had more fatalities and injuries respectively. 
+
+```{r}
+  fatalities <- data[, sum(FATALITIES) , by = EVTYPE][order(V1 , decreasing = TRUE)];
+  injuries <- data[ , sum(INJURIES), by = EVTYPE][order(V1, decreasing = TRUE)];
+  setnames(fatalities, "V1", "TotalFatalities") 
+  setnames(injuries, "V1", "TotalInjuries");
+  fatalities[1:10];
+  injuries[1:10];
+```
+
+The following  chart shows the top 10 natural events that caused fatalities or injuries  
+between the years of 1950 and 2011 in United States.  
+
+```{r}
+library(ggplot2);
+qplot(x = fatalities$EVTYPE[1:10], y = fatalities$TotalFatalities[1:10],
+      main = "Total Number of Fatalities", xlab = "Natural Event",
+      ylab = "Number of Fatalities") + theme(axis.title.x = element_text(face="bold"),
+           axis.text.x  = element_text(angle=90, vjust=1));
+qplot(x = injuries$EVTYPE[1:10] , y = injuries$TotalInjuries[1:10],
+     xlab = "Natural Event", ylab = "Number of Injuries", main = "Total Number of Injuries",
+     ) + theme(axis.title.x = element_text(face="bold"),
+           axis.text.x  = element_text(angle=90, vjust=1));
+```
+
+#### Across the United States, which types of events have the greatest economic consequences?
+
+The economic consequence is separated in two categories, the first one is property damage
+and the second is crop damage. Firstly we compute the top 10 natural events that caused
+the most economic consequence from property and crop.
+
+```{r, Calculate Cost damage}
+  property <- data[, sum(PROPDMG) , by = EVTYPE][order(V1 , decreasing = TRUE)];
+  crop <- data[ , sum(CROPDMG), by = EVTYPE][order(V1, decreasing = TRUE)];
+  setnames(property, "V1", "TotalPropDamageBlnUSD") 
+  setnames(crop, "V1", "TotalCropDamageBlnUSD");
+  property[1:10];
+  crop[1:10];
+```
+
+The following chart shows the total amount of the 10
+natural events that caused more property damage in United States in between the years of
+1950 and 2011. 
+
+```{r, Plot cost}
+library(ggplot2);
+qplot(x = property$EVTYPE[1:10], y = property$TotalPropDamageBlnUSD[1:10],
+      main = "Total Property Damage", xlab = "Natural Event",
+      ylab = "Cost in bln USD") + 
+  theme(axis.text.x  = element_text(angle=90, vjust=1));
+qplot(x = crop$EVTYPE[1:10] , y = crop$TotalCropDamageBlnUSD[1:10],
+     xlab = "Natural Event", ylab = "Cost in bln USD", main = "Total Crop Damage",
+     ) + theme(axis.text.x  = element_text(angle=90, vjust=1));
+```
+
+
+### Conclusions
+  It can be seen that the most harmful natural event to United States population is Tornado with 5633 fatalities and 91346 injuries followed by Excessive Heat in terms of fatalities (1903) and TSTM Wind in terms of injuries (6957). 
+  
+  For economic consequence it can be seen that Flood (144.657710 bln USD), Hurricane or Thyphon 
+  (69.305840 bln USD) and Tornado (56.937161 bln USD) are the natural events that causes the most property damage. On the other hand Drought (13.972566 bln USD), Flood (5.661968 bln USD) and River Flood (5.029459 bln USD) are the natural events that causes the most economic damage to crop. 
+

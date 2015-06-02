@@ -1,0 +1,108 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+Firstly the file **activity.zip** is unziped then the   
+**activity.csv** file is loaded to R as a data.table.
+
+```{r}
+  library(data.table)
+  unzip("activity.zip");
+  data <- data.table(read.csv("activity.csv"));
+```
+##  What is mean total number of steps taken per day?
+The following histogram shows the histogram of the number of  
+steps taken each day.
+
+```{r, cache = T}
+# Sum steps by day
+sumSteps <- data[, sum(steps, na.rm = TRUE), by = date];
+# Display the result in a histogram
+hist(sumSteps$V1, xlab = "Number of steps per day");
+```
+
+The following code shows the mean and median of the total number of steps taken per day.  
+
+```{r, cache = TRUE}
+  sumSteps[ , mean(V1, na.rm = TRUE)]
+  sumSteps[ , median(V1, na.rm = TRUE)]
+
+```
+
+## What is the average daily activity pattern?
+
+The folowing plot show the 5-minute interval average 
+```{r, cache = TRUE}
+averageDaily <- data[ , mean(steps, na.rm = TRUE), by = interval];
+plot(x = averageDaily$interval, y = averageDaily$V1, xlab = "5-Minute Interval", 
+     ylab = "Average");
+```
+
+The interval which has the maximum average is: 
+```{r, cache = TRUE}
+averageDaily[which.max(V1), ]
+```
+
+### Filling missing values
+
+It can be seen that only the variable step has missing values and it has 2304 missing values.  
+```{r, cache = TRUE}
+  summary(data)
+```
+
+The following code fill missing value by the 5-minute interval mean
+
+```{r, cache = TRUE}
+  fill_missing <- function(step, inter) {
+    ifelse(!is.na(step), result <- (step), 
+           result <- averageDaily[averageDaily[ ,interval == inter]]$V1)
+    result;
+  }
+  filledData <- data;
+  filledData$steps <- mapply(fill_missing, filledData$steps, filledData$interval);
+```
+
+The following histogram shows the distrubition of the number of steps with missing values filled.
+
+```{r, cache = TRUE}
+  sumFilled <- filledData[ , sum(steps), by = date];
+  hist(sumFilled$V1, breaks = 10);
+```
+
+The following code computes the mean and median of the data with missing values filled.
+```{r, cache = TRUE}
+  sumFilled[ , mean(V1)]
+  sumFilled[ , median(V1)]
+```
+
+The mean and median values are higher. 
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+```{r, cache = TRUE, out.height= 5}
+  
+  convert <- function(day) {
+    day <- weekdays(day);
+    ifelse(day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"),
+           result <- "weekday",
+           result <- "weekend");
+    
+    result
+  }
+  filledData$date <- as.Date(filledData$date);
+  filledData[ , day := sapply(filledData$date, convert)];
+  meanDay <- filledData[ , mean(steps), by = c("interval", "day")];
+  meanWeekday <- meanDay[meanDay[ , day == "weekday"]]
+  meanWeekend <- meanDay[meanDay[ , day == "weekend"]]
+
+  par(mfrow = c(2,1));
+  plot(x = meanWeekday$interval, y = meanWeekday$V1, xlab = "interval", ylab = "Mean 5-minutes");
+  plot(x = meanWeekend$interval, y = meanWeekend$V1, xlab = "interval", ylab = "Mean 5-minutes"); 
+```
+
+There exists a difference between week days and weekend days 

@@ -1,0 +1,17 @@
+{
+    "contents" : "# R Programming Assignment 2\n# Caching the Inverse of a Matrix\n# Used the same structure as the example provided \n\n# Create a special \"matrix\"\nmakeCacheMatrix <- function(x = matrix()) {\n  i <- NULL\n  set <- function(y) {\n    x <<- y\n    i <<- NULL\n  }\n  get <- function() x\n  setinverse <- function(inverse) i <<- inverse\n  getinverse <- function() i\n  list(set = set, get = get,\n    setinverse = setinverse,\n    getinverse = getinverse)\n}\n\n# Returns the inverse matrix in cache if it was already computed\ncacheSolve <- function(x, ...) {\n  i <- x$getinverse()\n  if(!is.null(i)) {\n    message(\"getting cached data\")\n    return(i)\n  }\n  data <- x$get()\n  i <- solve(data, ...)\n  x$setinverse(i)\n  i\n}",
+    "created" : 1418541758061.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3083541712",
+    "id" : "94AE4632",
+    "lastKnownWriteTime" : 1418542142,
+    "path" : "~/Área de Trabalho/R/ProgrammingAssignment2/cachematrix.R",
+    "project_path" : "cachematrix.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

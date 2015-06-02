@@ -1,0 +1,17 @@
+{
+    "contents" : "library(data.table);\nlibrary(dplyr);\n\n# Part 1\n# Merge training and test set\ntestData <- read.table(file = \"UCI HAR Dataset/test/X_test.txt\");\ntrainData <- read.table(file = \"UCI HAR Dataset/train/X_train.txt\");\ntestSubject <- read.table(file = \"UCI HAR Dataset/test/subject_test.txt\");\ntrainSubject <- read.table(file = \"UCI HAR Dataset/train/subject_train.txt\");\ntestLabel <- read.table(file = \"UCI HAR Dataset/test/y_test.txt\");\ntrainLabel <- read.table(file = \"UCI HAR Dataset/train/y_train.txt\");\n\nmergeData <- rbind(testData, trainData);\nmergeSubject <- rbind(testSubject, trainSubject);\nmergeLabel <- rbind(testLabel, trainLabel);\n\n# Remove unnecessary variables \nrm(\"testData\"); rm(\"trainData\"); rm(\"testSubject\"); rm(\"trainSubject\"); rm(\"testLabel\"); rm(\"trainLabel\");\n\n# Part 2\n# Extract only measurement on the mean and strandard deviation for each measurement \nmeasuresNames <- as.character(read.table(file = \"UCI HAR Dataset/features.txt\")[ , 2]);\nmeasuresToConsider <- grep(\"-mean\\\\(\\\\)|-std\\\\(\\\\)\", measuresNames, ignore.case = TRUE);\nmergeData <- mergeData[ ,measuresToConsider];\n\n# Part 3\n# Use descriptive activity names to name the activities in the data set\nactivitiesNames <- read.table(file = \"UCI HAR Dataset/activity_labels.txt\")[ ,2];\nactivitiesNames <- tolower(activitiesNames);\nactivitiesNames <- gsub(\"_\", \" \", activitiesNames);\n\nmeasuresNames <- measuresNames[measuresToConsider];\nmeasuresNames <- gsub(\"\\\\(\\\\)\", \"\", measuresNames);\nmeasuresNames <- gsub(\"-\", \"_\", measuresNames);\n\n# Part 3\n#Appropriately labels the data set with descriptive variable names\nnames(mergeData) <- measuresNames;\nnames(mergeLabel) <- c(\"activities\");\nnames(mergeSubject) <- c(\"subject\");\n\n# Part 4\n# From the data set in step 4, \n# creates a second, independent tidy data set with\n# the average of each variable for each activity and each subject\nfinalData <- tbl_df(cbind( mergeSubject, mergeLabel, mergeData));\nnames(finalData) <- c(names(mergeSubject),  names(mergeLabel), names(mergeData));\ngroupData <- group_by(finalData, subject, activities);\nmySummary <- summarise_each(groupData, funs(mean));\n\nnactivities <- sort(unique(finalData$activities));\nnactivities <- factor(nactivities, labels = activitiesNames);\nfinalData$activities <- nactivities[finalData$activities];\nmySummary$activities <- nactivities[mySummary$activities];\n\nwrite.table(finalData, file = \"merged_data.txt\");\nwrite.table(mySummary, file = \"mean_data.txt\");\n\n                             \n                             \n                             ",
+    "created" : 1421984402764.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1078547038",
+    "id" : "61061DB9",
+    "lastKnownWriteTime" : 1423582904,
+    "path" : "~/Área de Trabalho/Coursera/getingData/assignment1/run_analysis.R",
+    "project_path" : "run_analysis.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

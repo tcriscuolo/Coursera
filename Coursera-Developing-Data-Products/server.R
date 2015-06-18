@@ -46,9 +46,7 @@ shinyServer(function(input, output, clientData, session) {
       updateSelectInput(session, "siteNumber", choices = "--")
     }   
   })
-  
- 
-  
+
   dataInput <- reactive({
     # Returns the data table 
     # according to the parameters 
@@ -92,7 +90,7 @@ shinyServer(function(input, output, clientData, session) {
   output$dataTable <- renderDataTable({
     return (dataInput())
     
-  }, options = list(searching=FALSE, ordering=FALSE, paging=TRUE, search = FALSE))
+  }, options = list(searching=FALSE, ordering=FALSE, paging=FALSE, search = FALSE))
 
   output$map <- renderLeaflet({
     leaflet() %>%
@@ -100,7 +98,7 @@ shinyServer(function(input, output, clientData, session) {
         urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
         attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
       ) %>%
-      setView(lng = -90.85, lat = 48.45, zoom = 3)
+      setView(lng = -90.85, lat = 50.45, zoom = 3)
   })
   
   observe({
